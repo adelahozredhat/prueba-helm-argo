@@ -9,7 +9,6 @@ spec:
   source:
     path: helm
     repoURL: 'https://github.com/adelahozredhat/prueba-helm-argo'
-    chart: bgd
     targetRevision: master
     helm:
       valueFiles:
