@@ -167,10 +167,7 @@ spec:
             name: {{ $fullName }}-truststore-jks
         - name: {{ $namespace }}-kerberos
           secret:
-            secretName: "{{ $namespace }}-kerberos"     
-        - name: logon-dumps
-          persistentVolumeClaim:
-            claimName: logon-dumps
+            secretName: "{{ $namespace }}-kerberos"    
         {{- /*
           The bundle CA certificates injected in the 'customized-ca-bundle' configmap
         */}}    
