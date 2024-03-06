@@ -1,0 +1,11 @@
+{{- if .Values.deployments }}
+{{- range $k :=.Values.deployments }}
+{{- $fullName := printf "%s-%s" $.Values.appName .name }}
+{{- $namespace := printf "%s-%s" $.Values.appName $.Values.appTargetEnv }}
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.namespace }}
