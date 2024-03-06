@@ -1,0 +1,213 @@
+{{- if .Values.deployments }}
+{{- range $k := .Values.deployments }}
+{{- $limits := printf "%s%s" "limits." $k.envsize }}
+{{- $fullName := printf "%s-%s" $.Values.appName .name }}
+{{ $namespace := printf "%s-%s" $.Values.appName $.Values.appTargetEnv }}
+---
+## Zonda Deployment Config
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ $fullName }}
+    microservice: {{ $fullName }}
+    app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+spec:
+  template:
+    spec:
+      {{- /*
+      Security context constraint to run the pod using a specific user id
+      */}}
+      {{- if .uid }}
+      securityContext:
+        runAsUser: {{ .uid }}
+        runAsGroup: {{ .uid }}
+        fsGroup: {{ .uid }}
+      {{- end }}
+
+      {{- /*
+      Application container
+      */}}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution: 
+          - weight: 100  
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app" 
+                  operator: In 
+                  values:
+                  - {{ $fullName }}
+              topologyKey: kubernetes.io/hostname
+      imagePullSecrets:
+        - name: rosa-zonda-cicd-pull-secret
+      containers:
+        - image: quay.io/rhdevelopers/{{ $fullName }}:{{ $.Values.IMAGE_VERSION }}
+          name: {{ $fullName }}
+          imagePullPolicy: IfNotPresent
+          resources: {{ include $limits . | indent 12 }}
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 8888
+              name: ping
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "Europe/Madrid" 
+            - name: JAVA_INITIAL_MEM_RATIO
+              value: "100" 
+            - name: GC_MAX_METASPACE_SIZE
+              value: "1024"
+            - name: JAVA_MAX_MEM_RATIO
+              value: "75"
+            - name: JAVA_OPTS_APPEND
+              value: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/dumps/{{ $fullName }}.hprof"
+            - name: ADMIN_USERNAME
+              value: "eapadmin"
+            - name: ADMIN_PASSWORD
+              value: "eapadmin"
+            - name: JGROUPS_PING_PROTOCOL
+              value: openshift.DNS_PING
+            - name: OPENSHIFT_DNS_PING_SERVICE_NAME
+              value: {{ $fullName }}-ping
+            - name: OPENSHIFT_DNS_PING_SERVICE_PORT
+              value: "8888"
+            - name: JGROUPS_CLUSTER_PASSWORD
+              value: "dfgg"
+            - name: AUTO_DEPLOY_EXPLODED
+              value: "false"
+            - name: ENABLE_ACCESS_LOG
+              value: "true"
+            - name: AB_JOLOKIA_OFF
+              value: "true"
+            - name: KERBEROS_DEBUG
+              value: "false"
+            - name: LOGONUMG_USERNAME
+              value: "uumg02"
+            - name: LOGONUMG_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ $namespace }}-logonumgds"
+                  key: uumg02
+            - name: LOGONDS_USERNAME
+              value: "ulgn02"
+            - name: LOGONDS_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ $namespace }}-logonds"
+                  key: ulgn02
+            - name: LOGONSAPDATADS_USERNAME
+              value: "ulgnsap"
+            - name: LOGONSAPDATADS_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ $namespace }}-logonsapdatads"
+                  key: ulgnsap
+            - name: LOGINMODULEDS_USERNAME
+              value: "ulgn03"
+            - name: LOGINMODULEDS_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ $namespace }}-loginmoduleds"
+                  key: ulgn03 
+          {{- if .healthcheck }}
+          readinessProbe:
+            {{- if .customizedreadiness }}
+            {{ .customizedreadiness | indent 4  -}}
+            {{- else }}
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/readinessProbe.sh
+            initialDelaySeconds: 150
+            timeoutSeconds: 10
+            periodSeconds: 16
+            successThreshold: 1
+            failureThreshold: 3  
+            {{- end }}
+          livenessProbe:
+            {{- if .customizedliveness }}
+            {{ .customizedliveness | indent 4  -}}
+            {{- else }}
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /opt/eap/bin/livenessProbe.sh
+            initialDelaySeconds: 100
+            timeoutSeconds: 10
+            periodSeconds: 16
+            successThreshold: 1
+            failureThreshold: 3
+            {{- end }}
+          {{- end }}
+          terminationMessagePath: /dev/termination-log	
+          terminationMessagePolicy: File
+          volumeMounts:
+            - name: {{ $fullName }}-conf
+              mountPath: /logon-conf
+            - name: {{ $fullName }}-truststore-jks
+              mountPath: /opt/keystore
+            - name: logon-dumps
+              mountPath: /dumps
+            - name: {{ $namespace }}-kerberos
+              mountPath: /opt/security
+      terminationGracePeriodSeconds: 75
+      volumes:     
+        - name: {{ $fullName }}-conf
+          configMap:            
+            name: {{ $fullName }}-conf  
+        - name: {{ $fullName }}-truststore-jks
+          configMap:            
+            name: {{ $fullName }}-truststore-jks
+        - name: {{ $namespace }}-kerberos
+          secret:
+            secretName: "{{ $namespace }}-kerberos"     
+        - name: logon-dumps
+          persistentVolumeClaim:
+            claimName: logon-dumps
+        {{- /*
+          The bundle CA certificates injected in the 'customized-ca-bundle' configmap
+        */}}    
+        {{- if .injectBoundleCA }}
+        - name: trusted-ca
+          configMap:
+            defaultMode: 420
+            items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+            name: trusted-ca
+        {{- end }}
+        {{- /*
+          Persistent volume claims
+        */}}
+        {{- if .persistence }}
+        {{- range $p := .persistence }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}  
+        {{- end }}
+      {{- if .serviceAccount }}
+      serviceAccount: {{ .serviceAccount.name }}
+      {{- end }}
+    metadata:
+      labels:
+        app: {{ $fullName }}
+        microservice: {{ $fullName }}
+  {{- if .replicas }}      
+  replicas: {{ .replicas }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: {{ $fullName }}
+{{- end }}
+{{- end }}

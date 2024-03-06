@@ -1,0 +1,48 @@
+---
+zonda: null
+appName: bgd
+appTargetEnv: eu-qr
+clusterEnv: qa
+IMAGE_VERSION: 1.0.0
+appCluster: apps.cluster-fhz8c.fhz8c.sandbox1667.opentlc.com
+deployments:
+  - name: ext
+    healthcheck: true
+    envsize: extraflexible
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: sap
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: int
+    healthcheck: true
+    envsize: extraflexible
+    replicas: 1
+  - name: sap-primary
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: mop
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: terminal
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: umg
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1

@@ -1,0 +1,48 @@
+---
+zonda: null
+appName: zonda
+appTargetEnv: eu-qr
+clusterEnv: qa
+IMAGE_VERSION: 4.35.5.801
+appCluster: apps.esdp-rosa.sk75.p1.openshiftapps.com
+deployments:
+  - name: ext
+    healthcheck: true
+    envsize: extraflexible
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: sap
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: int
+    healthcheck: true
+    envsize: extraflexible
+    replicas: 1
+  - name: sap-primary
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: mop
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: terminal
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1
+  - name: umg
+    healthcheck: true
+    envsize: large
+    routeannotation: |
+      haproxy.router.openshift.io/timeout: 300s
+    replicas: 1

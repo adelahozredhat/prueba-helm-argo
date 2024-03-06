@@ -1,0 +1,23 @@
+apiVersion: v2
+name: zonda
+description: >
+  A Helm chart that creates the required resources for deploying applications in the runtime namespaces of the 
+  dev, qa, ua and prod environments. This helm chart is always deployed in the '-dev', '-qa', '-ua' or '-prod' namespaces.
+
+type: application
+version: 0.0.75
+appVersion: "0.0.75"
+icon: https://cdn.iconscout.com/icon/free/png-256/openshift-283020.png
+
+keywords:
+  - rosa
+  - deploy 
+  - zonda
+  # Quotas and limits not working, envsize at Deployment Config Level
+  # Removing configmap template , configmap created through Pipeline
+  # Removing imagestream template, image built with ansible
+  # Replicas at Deployment Config Level
+  # Two services http and ping
+  # Pending taking some env variables from zonda chart
+  # Not possible to customize routes, all internals
+

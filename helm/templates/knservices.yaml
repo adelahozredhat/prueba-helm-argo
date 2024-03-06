@@ -1,0 +1,76 @@
+{{- if .Values.knservices }}
+{{- range $k :=.Values.knservices }}
+{{ $fullName := printf "%s-%s" $.Values.appName .name }}
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ $fullName }}
+    knservice: {{ $fullName }}
+    app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+  namespace: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ $fullName }}
+        microservice: {{ $fullName }}
+    spec:
+      containers:
+        - image: image-registry.openshift-image-registry.svc:5000/{{ $.Values.appName }}-{{ $.Values.appTargetEnv }}/{{ $fullName }}:{{ $.Values.appTargetEnv }}
+          name: {{ $fullName }}
+          ports:
+            - containerPort: 8080
+              name: http1
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ $fullName }}-env
+            {{- if .mountsecrets }}
+            {{- range $ms := .mountsecrets }}
+            - secretRef:
+                name: {{ .name }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /opt/app-root/conf
+              readOnly: true
+            {{- if .injectBoundleCA }}
+            - name: trusted-ca
+              mountPath: /etc/pki/ca-trust/extracted/pem
+              readOnly: true
+            {{- end }}
+            {{- if .persistence }}
+            {{- range $p := .persistence }}
+            - name: {{ $.Values.appName }}-{{ .name }}
+              mountPath: {{ .mountPath }} 
+              {{- if .readOnly }}
+              readOnly: {{ .readOnly }}
+              {{- end }}
+            {{- end }}      
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $fullName }}-conf
+        {{- if .injectBoundleCA }}
+        - name: trusted-ca
+          configMap:
+            defaultMode: 420
+            items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+            name: trusted-ca
+        {{- end }}
+        {{- if .persistence }}
+        {{- range $p := .persistence }}
+        - name: {{ $.Values.appName }}-{{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ $.Values.appName }}-{{ .name }}
+        {{- end }}      
+        {{- end }}
+{{- end }}
+{{- end }}

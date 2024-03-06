@@ -1,0 +1,10 @@
+{{- if .Values.clusterTrustedCA }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trusted-ca
+  labels: 
+    config.openshift.io/inject-trusted-cabundle: "true"
+    app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+{{ end }}

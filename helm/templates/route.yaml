@@ -1,0 +1,33 @@
+{{- if .Values.deployments }}
+{{- range $k :=.Values.deployments }}
+{{- $fullName := printf "%s-%s" $.Values.appName .name }}
+{{- $namespace := printf "%s-%s" $.Values.appName $.Values.appTargetEnv }}
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: {{ $fullName }}
+  namespace: {{ $namespace }}
+  labels: 
+    type: internal
+    app:  {{ $.Values.appName }}
+    microservice: {{ $fullName }}
+    app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+  annotations:
+    openshift.io/host.generated: 'true'
+{{- if .routeannotation }}
+{{ .routeannotation | indent 4  -}}
+{{- end }}
+spec:
+  host: {{ $fullName }}-{{ $.Values.appTargetEnv }}.{{ $.Values.appCluster }}
+  to:
+    kind: Service
+    name: {{ $fullName }}
+    weight: 100
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Allow
+  wildcardPolicy: None
+{{- end }}  
+{{- end }}
+

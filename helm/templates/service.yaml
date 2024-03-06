@@ -1,0 +1,50 @@
+{{- if .Values.deployments }}
+{{- range $k :=.Values.deployments }}
+{{ $fullName := printf "%s-%s" $.Values.appName .name }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ $fullName }}
+  namespace: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+  annotations:
+      description: The web server's http port.
+  labels:
+    app: {{ $.Values.appName }}
+    microservice: {{ $fullName }}
+    app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+spec:
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: {{ $fullName }}
+  sessionAffinity: None
+  # sessionAffinity not configured for zonda actually
+  # ipFamilyPolicy: SingleStack appears on rosa, what means ?
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ $fullName }}-ping
+  namespace: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+  annotations:
+      description: The JGroups ping port for clustering.
+      service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  labels:
+    app: {{ $.Values.appName }}
+    microservice: {{ $fullName }}
+    app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+spec:
+  clusterIP: None
+  ports:
+    - name: ping
+      port: 8888
+  selector:
+    deploymentconfig: {{ $fullName }}
+{{- end }}
+{{- end }}

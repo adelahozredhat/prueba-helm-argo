@@ -1,0 +1,36 @@
+
+
+{{- if .Values.deployments }}
+{{- range $k := $.Values.deployments }}
+{{ $fullName := printf "%s-%s" $.Values.appName .name }}
+{{- if .persistence }}
+{{- range $p := .persistence }}
+{{/*
+Create a shared persistentvolumeclaim only once
+*/}}
+{{- $pvc := lookup "v1" "PersistentVolumeClaim" $fullName -}}
+{{- if not $pvc -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: {{ .name }}
+    labels:
+      app.kubernetes.io/instance: {{ $.Values.appName }}-{{ $.Values.appTargetEnv }}
+spec:
+    accessModes:
+    - {{ .accessModes }}
+    resources:
+      requests:
+        storage: {{ .volumeSize }} 
+{{- if .storageClassName }}
+    storageClassName: "{{ .storageClassName }}"
+{{- end }}
+{{- if .volumeName }}
+    volumeName: "{{ .volumeName }}"
+{{- end }}
+{{- end }}
+{{- end }}        
+{{- end }}
+{{- end }}
+{{- end }}
