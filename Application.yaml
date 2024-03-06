@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bgd-helm
+  name: bgd-helm-new
 spec:
   destination:
     namespace: user1-bgdh
@@ -10,6 +10,7 @@ spec:
     path: helm
     repoURL: 'https://github.com/adelahozredhat/prueba-helm-argo'
     targetRevision: master
+    chart: 
     helm:
       valueFiles:
       - values1.yaml
