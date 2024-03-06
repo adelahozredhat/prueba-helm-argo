@@ -1,8 +1,6 @@
-{{- if .Values.deployments }}
-{{- range $k :=.Values.deployments }}
-{{- $fullName := printf "%s-%s" $.Values.appName .name }}
-{{- $namespace := printf "%s-%s" $.Values.appName $.Values.appTargetEnv }}
+{{ $namespace := printf "%s-%s" $.Values.appName $.Values.appTargetEnv }}
 ---
+## Zonda Deployment Config
 kind: Namespace
 apiVersion: v1
 metadata:
