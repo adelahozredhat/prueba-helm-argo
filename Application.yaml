@@ -13,7 +13,7 @@ spec:
     chart: 
     helm:
       valueFiles:
-      - values1.yaml
+      - ../values1.yaml
   sources: []
   project: default
   syncPolicy:
