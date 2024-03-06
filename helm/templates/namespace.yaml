@@ -1,9 +1,0 @@
-{{ $namespace := printf "%s-%s" $.Values.appName $.Values.appTargetEnv }}
----
-## Zonda Deployment Config
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: {{ $namespace }}
-  labels:
-    name: {{ $namespace }}
