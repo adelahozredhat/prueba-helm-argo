@@ -2,9 +2,10 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: bgd-helm-new
+  namespace: bgd-eu-qr
 spec:
   destination:
-    namespace: user1-bgdh
+    namespace: bgd-eu-qr
     server: 'https://kubernetes.default.svc'
   source:
     path: helm
@@ -17,6 +18,8 @@ spec:
   sources: []
   project: default
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
     automated:
       prune: true
       selfHeal: true
